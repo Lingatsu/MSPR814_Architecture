@@ -1,4 +1,91 @@
+version: '3.8'
+
 services:
+
+  product-api:
+    image: lingatsu/product-api:latest
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mspr:tpre814@mongo:27017/
+      - ASPNETCORE_URLS=http://+:5000
+    depends_on:
+      - mongo
+      - rabbitmq
+    networks:
+      - api
+      - msgbroker
+
+  # user-api:
+  #   image: username/user-api:latest  # Ton image pour l'API User
+  #   ports:
+  #     - "5001:5000"  # Port différent pour éviter les conflits
+  #   environment:
+  #     - MONGO_URI=mongodb://mongo:27017
+  #   depends_on:
+  #     - sql
+  #     - rabbitmq
+  #   networks:
+  #     - api
+  #     - msgbroker
+
+  # order-api:
+  #   image: username/order-api:latest  # Ton image pour l'API Order
+  #   ports:
+  #     - "5002:5000"  # Port différent pour éviter les conflits
+  #   environment:
+  #     - MONGO_URI=mongodb://mongo:27017
+  #   depends_on:
+  #     - mariadb
+  #     - rabbitmq
+  #   networks:
+  #     - api
+  #     - msgbroker
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mspr
+      MONGO_INITDB_ROOT_PASSWORD: tpre814
+    ports:
+    - 27017:27017
+    networks:
+    - api
+    - msgbroker
+    volumes:
+    - ./mongodb_data:/data/db    
+
+  # mysql:
+  #   image: mysql:5.7
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  #     MYSQL_DATABASE: userdb
+  #     MYSQL_USER: ${MYSQL_USER}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #   ports:
+  #     - "3306:3306"
+  #   networks:
+  #     - productapi-network
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+
+  # mariadb:
+  #   image: mariadb:latest
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+  #     MYSQL_DATABASE: orderdb
+  #     MYSQL_USER: ${MARIADB_USER}
+  #     MYSQL_PASSWORD: ${MARIADB_PASSWORD}
+  #   ports:
+  #     - "3307:3306"  # Port différent pour éviter les conflits avec MySQL
+  #   networks:
+  #     - productapi-network
+  #   volumes:
+  #     - mariadb_data:/var/lib/mysql
+
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: "rabbitmq"
@@ -6,13 +93,22 @@ services:
     ports:
       - "5672:5672"   # AMQP protocol
       - "15672:15672" # Management UI
-    env_file:
-      - .env
+    # env_file:
+    #   - .env
     environment:
       RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - msgbroker  
 
 volumes:
+  mongodb_data:
+  mysql_data:
+  mariadb_data:
   rabbitmq_data:
+
+networks:
+  api:
+  msgbroker:
