@@ -1,6 +1,98 @@
+version: '3.8'
+
 services:
+
+  product-api:
+    image: lingatsu/product-api:latest
+    container_name: "productapi"
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - MONGO_URI=${MONGO_URI}
+    depends_on:
+      - mongo
+      - rabbitmq
+    networks:
+      - app_network
+
+  # user-api:
+  #   image: username/user-api:latest  # Ton image pour l'API User
+  #   ports:
+  #     - "5001:5000"  # Port différent pour éviter les conflits
+  #   environment:
+  #     - MONGO_URI=mongodb://mongo:27017
+  #   depends_on:
+  #     - sql
+  #     - rabbitmq
+  #   networks:
+  #     - api
+  #     - msgbroker
+
+  # order-api:
+  #   image: username/order-api:latest  # Ton image pour l'API Order
+  #   ports:
+  #     - "5002:5000"  # Port différent pour éviter les conflits
+  #   environment:
+  #     - MONGO_URI=mongodb://mongo:27017
+  #   depends_on:
+  #     - mariadb
+  #     - rabbitmq
+  #   networks:
+  #     - api
+  #     - msgbroker
+
+  mongo:
+    image: mongo
+    container_name: "mongodb"
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
+    ports:
+    - 27017:27017
+    networks:
+      - app_network
+    volumes:
+    - ./mongodb_data:/data/db pose probleme actuellement
+
+  # mysql:
+  #   image: mysql:5.7
+  #   container_name: "mysql"
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  #     MYSQL_DATABASE: userdb
+  #     MYSQL_USER: ${MYSQL_USER}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #   ports:
+  #     - "3306:3306"
+  #   networks:
+  #     - productapi-network
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+
+  # mariadb:
+  #   image: mariadb:latest
+  #   container_name: "mariadb"
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+  #     MYSQL_DATABASE: orderdb
+  #     MYSQL_USER: ${MARIADB_USER}
+  #     MYSQL_PASSWORD: ${MARIADB_PASSWORD}
+  #   ports:
+  #     - "3307:3306"  # Port différent pour éviter les conflits avec MySQL
+  #   networks:
+  #     - api-network
+  #   volumes:
+  #     - mariadb_data:/var/lib/mysql
+
   rabbitmq:
-    image: "rabbitmq:3-management"
+    image: "rabbitmq:management"
     container_name: "rabbitmq"
     restart: always
     ports:
@@ -9,10 +101,20 @@ services:
     env_file:
       - .env
     environment:
-      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
-      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+     - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app_network  
 
 volumes:
+  mongodb_data:
+  mysql_data:
+  mariadb_data:
   rabbitmq_data:
+
+networks:
+  app_network:
+    name: app_network
+    driver: bridge
