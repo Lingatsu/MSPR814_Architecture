@@ -84,7 +84,7 @@ services:
     image: mariadb:latest
     container_name: "mariadb"
     restart: always
-    env_files:
+    env_file:
       - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
@@ -94,7 +94,7 @@ services:
     ports:
       - "3308:3306"  # Port différent pour éviter les conflits avec MySQL
     networks:
-      - api-network
+      - app_network
     volumes:
       - mariadb_data:/var/lib/mysql
 
