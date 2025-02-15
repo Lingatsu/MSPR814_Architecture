@@ -31,18 +31,20 @@ services:
     networks:
       - app_network
 
-  # order-api:
-  #   image: username/order-api:latest  # Ton image pour l'API Order
-  #   ports:
-  #     - "5002:5000"  # Port différent pour éviter les conflits
-  #   environment:
-  #     - MONGO_URI=mongodb://mongo:27017
-  #   depends_on:
-  #     - mariadb
-  #     - rabbitmq
-  #   networks:
-  #     - api
-  #     - msgbroker
+  order-api:
+    image: stevendella/commands:latest  # Ton image pour l'API Order
+    ports:
+      - "8083:8083"  # Port différent pour éviter les conflits
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+    depends_on:
+      - mariadb
+      - rabbitmq
+    networks:
+      - app_network
 
   mongo:
     image: mongo
@@ -56,7 +58,7 @@ services:
     networks:
       - app_network
     volumes:
-      - ./mongodb_data:/data/db pose probleme actuellement
+      - ./mongodb_data:/data/db # pose probleme actuellement
 
   postgres:
     image: postgres:15
@@ -78,21 +80,23 @@ services:
     networks:
       - app_network
 
-  # mariadb:
-  #   image: mariadb:latest
-  #   container_name: "mariadb"
-  #   restart: always
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-  #     MYSQL_DATABASE: orderdb
-  #     MYSQL_USER: ${MARIADB_USER}
-  #     MYSQL_PASSWORD: ${MARIADB_PASSWORD}
-  #   ports:
-  #     - "3307:3306"  # Port différent pour éviter les conflits avec MySQL
-  #   networks:
-  #     - api-network
-  #   volumes:
-  #     - mariadb_data:/var/lib/mysql
+  mariadb:
+    image: mariadb:latest
+    container_name: "mariadb"
+    restart: always
+    env_files:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_DATABASE: commandedb
+      MYSQL_USER: ${MARIADB_USER} #user
+      MYSQL_PASSWORD: ${MARIADB_PASSWORD} #mypassword
+    ports:
+      - "3308:3306"  # Port différent pour éviter les conflits avec MySQL
+    networks:
+      - api-network
+    volumes:
+      - mariadb_data:/var/lib/mysql
 
   rabbitmq:
     image: "rabbitmq:management"
