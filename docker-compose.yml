@@ -19,18 +19,17 @@ services:
     networks:
       - app_network
 
-  # user-api:
-  #   image: username/user-api:latest  # Ton image pour l'API User
-  #   ports:
-  #     - "5001:5000"  # Port différent pour éviter les conflits
-  #   environment:
-  #     - MONGO_URI=mongodb://mongo:27017
-  #   depends_on:
-  #     - sql
-  #     - rabbitmq
-  #   networks:
-  #     - api
-  #     - msgbroker
+  user-api:
+    image: leotepedelen/clients:latest  # Ton image pour l'API User
+    ports:
+      - "8081:8081"  # Port différent pour éviter les conflits
+    # environment:
+    #   - MONGO_URI=mongodb://mongo:27017
+    depends_on:
+      - postgres
+      # - rabbitmq
+    networks:
+      - app_network
 
   # order-api:
   #   image: username/order-api:latest  # Ton image pour l'API Order
@@ -53,27 +52,31 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
     ports:
-    - 27017:27017
+      - 27017:27017
     networks:
       - app_network
     volumes:
-    - ./mongodb_data:/data/db pose probleme actuellement
+      - ./mongodb_data:/data/db pose probleme actuellement
 
-  # mysql:
-  #   image: mysql:5.7
-  #   container_name: "mysql"
-  #   restart: always
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  #     MYSQL_DATABASE: userdb
-  #     MYSQL_USER: ${MYSQL_USER}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #   ports:
-  #     - "3306:3306"
-  #   networks:
-  #     - productapi-network
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
+  postgres:
+    image: postgres:15
+    container_name: test_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d testdb"]
+      interval: 5s
+      retries: 5
+      timeout: 3s
+    networks:
+      - app_network
 
   # mariadb:
   #   image: mariadb:latest
@@ -110,7 +113,7 @@ services:
 
 volumes:
   mongodb_data:
-  mysql_data:
+  postgres_data:
   mariadb_data:
   rabbitmq_data:
 
